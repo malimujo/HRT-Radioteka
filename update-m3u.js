@@ -62,7 +62,7 @@ async function updateM3U() {
       console.log('📅 Datum/vrijeme:', emisijaInfo);
       
       const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti ${emisijaInfo}
+#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Radioteka ${emisijaInfo}
 ${firstMp3}`;
 
       fs.writeFileSync('Radioteka.m3u', m3uContent);
