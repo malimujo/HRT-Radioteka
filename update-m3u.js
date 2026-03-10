@@ -62,10 +62,12 @@ async function updateM3U() {
         const bodyText = document.body.innerText || document.body.textContent || '';
         const timeMatches = bodyText.match(/([Pp]on|[Uu]to|[Ss]ri|[Čč]et|[Pp]et|[Ss]ub|[Nn]ed)(?:to|ak)?[,.\s]+(\d{1,2})[.\s]+(\d{1,2})[.\s]*u[.\s]*(\d{1,2}):(\d{2})/gi);
         
-        if (timeMatches && timeMatches.length > 0) {
-          return timeMatches[0].trim();
+        // ✅ ZA RADIOTEKU: DRUGI MATCH = prava emisija (20:00)
+        if (timeMatches && timeMatches.length > 1) {
+          return timeMatches[1].trim();
         }
-        return null;
+        // Fallback na prvi ako nema drugog
+        return timeMatches ? timeMatches[0].trim() : null;
       });
       
       const timeMatch = result.mp3.match(/(\d{4})(\d{2})(\d{2})(\d{6})\.mp3$/);
@@ -73,7 +75,7 @@ async function updateM3U() {
       
       if (webTime) {
         emisijaInfo = webTime;
-        console.log('🕐 Web vrijeme:', webTime);
+        console.log('🕐 Web vrijeme (drugi match):', webTime);
       } else if (timeMatch) {
         const godina = timeMatch[1];
         const mjesec = timeMatch[2];
