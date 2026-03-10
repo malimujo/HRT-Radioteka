@@ -24,7 +24,6 @@ async function updateM3U() {
     const result = await page.evaluate(() => {
       const allLinks = Array.from(document.querySelectorAll('a[href], script, img'));
       
-      // 🎵 MP3 link
       for (const link of allLinks) {
         const href = link.href || link.src || link.getAttribute('data-src');
         if (href && href.includes('api.hrt.hr/media') && href.includes('.mp3')) {
@@ -32,7 +31,6 @@ async function updateM3U() {
         }
       }
       
-      // 🖼️ Slika
       let imageUrl = null;
       for (const img of allLinks) {
         const src = img.src || img.getAttribute('data-src');
@@ -42,12 +40,11 @@ async function updateM3U() {
         }
       }
       
-      // 🎵 REGEX u scriptovima
       const scripts = Array.from(document.querySelectorAll('script'));
       for (const script of scripts) {
         const content = script.textContent || script.innerHTML;
-        const mp3Regex1 = new RegExp('"https?:\\\\/\\\\/api\\\\\\.hrt\\\\\\.hr\\\\/media[^"]*\\\\\\.mp3[^"]*"');
-        const mp3Regex2 = new RegExp("'https?:\\\\/\\\\/api\\\\\\.hrt\\\\\\.hr\\\\/media[^']*\\\\\\.mp3[^']*'");
+        const mp3Regex1 = /"https?:\/\/api\.hrt\.hr\/media[^"]*\.mp3[^"]*"/;
+        const mp3Regex2 = /'https?:\/\/api\.hrt\.hr\/media[^']*\.mp3[^']*'/;
         const mp3Match1 = content.match(mp3Regex1);
         const mp3Match2 = content.match(mp3Regex2);
         if (mp3Match1) return { mp3: mp3Match1[0].slice(1, -1), image: imageUrl };
@@ -61,7 +58,6 @@ async function updateM3U() {
     console.log('🖼️ Slika:', result.image);
     
     if (result.mp3) {
-      // 🆕 PRVI MATCH = NAJNOVIJA EMISIJA
       const webTime = await page.evaluate(() => {
         const bodyText = document.body.innerText || document.body.textContent || '';
         const timeMatches = bodyText.match(/([Pp]on|[Uu]to|[Ss]ri|[Čč]et|[Pp]et|[Ss]ub|[Nn]ed)(?:to|ak)?[,.\s]+(\d{1,2})[.\s]+(\d{1,2})[.\s]*u[.\s]*(\d{1,2}):(\d{2})/gi);
@@ -77,7 +73,7 @@ async function updateM3U() {
       
       if (webTime) {
         emisijaInfo = webTime;
-        console.log('🕐 Web vrijeme (prvi match):', webTime);
+        console.log('🕐 Web vrijeme:', webTime);
       } else if (timeMatch) {
         const godina = timeMatch[1];
         const mjesec = timeMatch[2];
@@ -89,7 +85,7 @@ async function updateM3U() {
         console.log('📅 Iz MP3:', emisijaInfo);
       }
       
-      console.log('📅 Konačno datum/vrijeme:', emisijaInfo);
+      console.log('📅 Konačno:', emisijaInfo);
       
       const imageUrl = result.image || 'https://radio.hrt.hr/favicon.ico';
       const m3uContent = `#EXTM3U
@@ -97,3 +93,23 @@ async function updateM3U() {
 ${result.mp3}`;
 
       fs.writeFileSync('Radioteka.m3u', m3uContent);
+      console.log('✅ Radioteka.m3u spreman!');
+    } else {
+      throw new Error('Nema MP3-a');
+    }
+    
+  } catch (error) {
+    console.error('❌', error.message);
+    const fallbackContent = `#EXTM3U
+#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Radioteka Sri, 04.03. u 20:00
+https://api.hrt.hr/media/28/da/20260304-radioteka-37328738-20260304200000.mp3`;
+    fs.writeFileSync('Radioteka.m3u', fallbackContent);
+    console.log('✅ Fallback spreman');
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+}
+
+updateM3U();
