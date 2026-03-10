@@ -62,29 +62,38 @@ async function updateM3U() {
         const bodyText = document.body.innerText || document.body.textContent || '';
         const timeMatches = bodyText.match(/([Pp]on|[Uu]to|[Ss]ri|[Čč]et|[Pp]et|[Ss]ub|[Nn]ed)(?:to|ak)?[,.\s]+(\d{1,2})[.\s]+(\d{1,2})[.\s]*u[.\s]*(\d{1,2}):(\d{2})/gi);
         
-        // ✅ ZA RADIOTEKU: DRUGI MATCH = prava emisija (20:00)
-        if (timeMatches && timeMatches.length > 1) {
-          return timeMatches[1].trim();
+        if (timeMatches) {
+          // 🎯 RADIOTEKA SPECIFIČNO: traži 20:00 ili uzmi drugi match
+          for (let i = 0; i < timeMatches.length; i++) {
+            if (timeMatches[i].includes('20:00') || (i === 1)) {
+              return timeMatches[i].trim();
+            }
+          }
+          // Fallback na prvi
+          return timeMatches[0].trim();
         }
-        // Fallback na prvi ako nema drugog
-        return timeMatches ? timeMatches[0].trim() : null;
+        return null;
       });
       
       const timeMatch = result.mp3.match(/(\d{4})(\d{2})(\d{2})(\d{6})\.mp3$/);
       let emisijaInfo = 'Najnovija';
       
-      if (webTime) {
-        emisijaInfo = webTime;
-        console.log('🕐 Web vrijeme (drugi match):', webTime);
-      } else if (timeMatch) {
+      // ✅ PRIORITET: MP3 filename > Web 20:00 > Web bilo koji
+      if (timeMatch) {
         const godina = timeMatch[1];
         const mjesec = timeMatch[2];
         const dan = timeMatch[3];
         const vrijeme = timeMatch[4];
         const sat = vrijeme.slice(0,2);
         const minute = vrijeme.slice(2,4);
-        emisijaInfo = `${dan}.${mjesec}.${sat}:${minute}`;
-        console.log('📅 Iz MP3:', emisijaInfo);
+        emisijaInfo = `${dan}.${mjesec}. ${sat}:${minute}`;
+        console.log('📅 IZ MP3 (prioritet):', emisijaInfo);
+      } else if (webTime && webTime.includes('20:')) {
+        emisijaInfo = webTime;
+        console.log('🕐 Web 20:00:', webTime);
+      } else if (webTime) {
+        emisijaInfo = webTime;
+        console.log('🕐 Web bilo koji:', webTime);
       }
       
       console.log('📅 Konačno:', emisijaInfo);
