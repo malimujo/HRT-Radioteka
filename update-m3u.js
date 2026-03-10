@@ -42,7 +42,7 @@ async function updateM3U() {
         }
       }
       
-      // 🎵 ISPOPRAVLJENI REGEX u scriptovima
+      // 🎵 REGEX u scriptovima
       const scripts = Array.from(document.querySelectorAll('script'));
       for (const script of scripts) {
         const content = script.textContent || script.innerHTML;
@@ -61,37 +61,15 @@ async function updateM3U() {
     console.log('🖼️ Slika:', result.image);
     
     if (result.mp3) {
-      // 🆕 NAJNOVIJA EPIZODA po DATUMU (kao za U mreži prvog)
+      // 🆕 PRVI MATCH = NAJNOVIJA EMISIJA (vrh stranice)
       const webTime = await page.evaluate(() => {
         const bodyText = document.body.innerText || document.body.textContent || '';
-        // Pronađi SVE datume/vremena
+        // Pronađi datume/vremena
         const timeMatches = bodyText.match(/([Pp]on|[Uu]to|[Ss]ri|[Čč]et|[Pp]et|[Ss]ub|[Nn]ed)(?:to|ak)?[,.\s]+(\d{1,2})[.\s]+(\d{1,2})[.\s]*u[.\s]*(\d{1,2}):(\d{2})/gi);
         
+        // ✅ PRVI match = najnovija emisija (obično na vrhu stranice)
         if (timeMatches && timeMatches.length > 0) {
-          let latestTime = null;
-          let latestTimestamp = 0;
-          
-          // Pretvori svaki match u timestamp i uzmi najnoviji
-          for (const match of timeMatches) {
-            const parsed = match.match(/([Pp]on|[Uu]to|[Ss]ri|[Čč]et|[Pp]et|[Ss]ub|[Nn]ed)(?:to|ak)?[,.\s]+(\d{1,2})[.\s]+(\d{1,2})[.\s]*u[.\s]*(\d{1,2}):(\d{2})/i);
-            if (parsed && parsed[2] && parsed[3] && parsed[4] && parsed[5]) {
-              const dan = parseInt(parsed[2], 10);
-              const mjesec = parseInt(parsed[3], 10) - 1; // JS mjesec 0-11
-              const sat = parseInt(parsed[4], 10);
-              const minuta = parseInt(parsed[5], 10);
-              
-              // Pretpostavi 2026. godinu
-              const datum = new Date(2026, mjesec, dan, sat, minuta);
-              const timestamp = datum.getTime();
-              
-              if (timestamp > latestTimestamp) {
-                latestTimestamp = timestamp;
-                latestTime = match.trim();
-              }
-            }
-          }
-          
-          return latestTime || null;
+          return timeMatches[0].trim();
         }
         return null;
       });
@@ -101,43 +79,5 @@ async function updateM3U() {
       
       if (webTime) {
         emisijaInfo = webTime;
-        console.log('🕐 Web vrijeme (najnovije):', webTime);
-      } else if (timeMatch) {
-        const godina = timeMatch[1];
-        const mjesec = timeMatch[2];
-        const dan = timeMatch[3];
-        const vrijeme = timeMatch[4];
-        const sat = vrijeme.slice(0,2);
-        const minute = vrijeme.slice(2,4);
-        emisijaInfo = `${dan}.${mjesec}.${sat}:${minute}`;
-        console.log('📅 Iz MP3:', emisijaInfo);
-      }
-      
-      console.log('📅 Konačno datum/vrijeme:', emisijaInfo);
-      
-      const imageUrl = result.image || 'https://radio.hrt.hr/favicon.ico';
-      const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="${imageUrl}" group-title="Dance",HRT Radioteka ${emisijaInfo}
-${result.mp3}`;
-
-      fs.writeFileSync('Radioteka.m3u', m3uContent);
-      console.log('✅ Radioteka.m3u spreman s ikonom i vremenom!');
-    } else {
-      throw new Error('Nema MP3-a');
-    }
-    
-  } catch (error) {
-    console.error('❌', error.message);
-    const fallbackContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Radioteka Uto, 10.03. u 20:30
-https://api.hrt.hr/media/28/da/20260310-radioteka-37328738-20260310203000.mp3`;
-    fs.writeFileSync('Radioteka.m3u', fallbackContent);
-    console.log('✅ Fallback Radioteka.m3u spreman');
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
-  }
-}
-
-updateM3U();
+        console.log('🕐 Web vrijeme (prvi match):', webTime);
+      } else if (timeM
