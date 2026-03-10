@@ -46,8 +46,8 @@ async function updateM3U() {
       const scripts = Array.from(document.querySelectorAll('script'));
       for (const script of scripts) {
         const content = script.textContent || script.innerHTML;
-        const mp3Regex1 = new RegExp('"https?:\\\\\\/\\\\\\/api\\\\.hrt\\\\.hr\\\\\\/media[^"]*\\\\.mp3[^"]*"');
-        const mp3Regex2 = new RegExp("'https?:\\\\\\/\\\\\\/api\\\\.hrt\\\\.hr\\\\\\/media[^']*\\\\.mp3[^']*'");
+        const mp3Regex1 = new RegExp('"https?:\\\\/\\\\/api\\\\\\.hrt\\\\\\.hr\\\\/media[^"]*\\\\\\.mp3[^"]*"');
+        const mp3Regex2 = new RegExp("'https?:\\\\/\\\\/api\\\\\\.hrt\\\\\\.hr\\\\/media[^']*\\\\\\.mp3[^']*'");
         const mp3Match1 = content.match(mp3Regex1);
         const mp3Match2 = content.match(mp3Regex2);
         if (mp3Match1) return { mp3: mp3Match1[0].slice(1, -1), image: imageUrl };
@@ -61,13 +61,11 @@ async function updateM3U() {
     console.log('🖼️ Slika:', result.image);
     
     if (result.mp3) {
-      // 🆕 PRVI MATCH = NAJNOVIJA EMISIJA (vrh stranice)
+      // 🆕 PRVI MATCH = NAJNOVIJA EMISIJA
       const webTime = await page.evaluate(() => {
         const bodyText = document.body.innerText || document.body.textContent || '';
-        // Pronađi datume/vremena
         const timeMatches = bodyText.match(/([Pp]on|[Uu]to|[Ss]ri|[Čč]et|[Pp]et|[Ss]ub|[Nn]ed)(?:to|ak)?[,.\s]+(\d{1,2})[.\s]+(\d{1,2})[.\s]*u[.\s]*(\d{1,2}):(\d{2})/gi);
         
-        // ✅ PRVI match = najnovija emisija (obično na vrhu stranice)
         if (timeMatches && timeMatches.length > 0) {
           return timeMatches[0].trim();
         }
@@ -80,4 +78,22 @@ async function updateM3U() {
       if (webTime) {
         emisijaInfo = webTime;
         console.log('🕐 Web vrijeme (prvi match):', webTime);
-      } else if (timeM
+      } else if (timeMatch) {
+        const godina = timeMatch[1];
+        const mjesec = timeMatch[2];
+        const dan = timeMatch[3];
+        const vrijeme = timeMatch[4];
+        const sat = vrijeme.slice(0,2);
+        const minute = vrijeme.slice(2,4);
+        emisijaInfo = `${dan}.${mjesec}.${sat}:${minute}`;
+        console.log('📅 Iz MP3:', emisijaInfo);
+      }
+      
+      console.log('📅 Konačno datum/vrijeme:', emisijaInfo);
+      
+      const imageUrl = result.image || 'https://radio.hrt.hr/favicon.ico';
+      const m3uContent = `#EXTM3U
+#EXTINF:-1 tvg-logo="${imageUrl}" group-title="Dance",HRT Radioteka ${emisijaInfo}
+${result.mp3}`;
+
+      fs.writeFileSync('Radioteka.m3u', m3uContent);
