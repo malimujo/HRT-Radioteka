@@ -46,30 +46,19 @@ const result = await page.evaluate(() => {
     }
   }
 
-  // 3. Slika
-  let imageUrl = null;
-  for (const img of allLinks) {
-    const src = img.src || img.getAttribute('data-src');
-    if (src && src.includes('api.hrt.hr/media') && (src.includes('.webp') || src.includes('.jpg'))) {
-      imageUrl = src;
-      break;
-    }
-  }
-
-  // 4. REGEX u scriptovima za MP3
+   // 3. REGEX u scriptovima za MP3
   for (const script of scripts) {
     const content = script.textContent || script.innerHTML;
     const mp3Match1 = content.match(/"https?:\/\/api\.hrt\.hr\/media[^"]*\.mp3[^"]*"/);
     const mp3Match2 = content.match(/'https?:\/\/api\.hrt\.hr\/media[^']*\.mp3[^']*'/);
-    if (mp3Match1) return { mp3: mp3Match1[0].slice(1, -1), image: imageUrl, title: episodeTitle };
-    if (mp3Match2) return { mp3: mp3Match2[0].slice(1, -1), image: imageUrl, title: episodeTitle };
+    if (mp3Match1) return { mp3: mp3Match1[0].slice(1, -1), title: episodeTitle };
+    if (mp3Match2) return { mp3: mp3Match2[0].slice(1, -1), title: episodeTitle };
   }
 
-  return { mp3: null, image: null, title: 'Najnovija' };
+  return { mp3: null, title: 'Najnovija' };
 });
 
 console.log('🎵 MP3:', result.mp3);
-console.log('🖼️ Slika:', result.image);
 console.log('📺 NAZIV JSON:', result.title);
 
 if (result.mp3) {
@@ -88,9 +77,11 @@ if (result.mp3) {
 
   console.log('📅 Konačni naziv:', emisijaInfo);
 
-  const imageUrl = result.image || 'https://radio.hrt.hr/favicon.ico';
+  // 🔥 FIKSNA SLIKA umjesto HRT‑ove
+      const tvgLogoUrl = 'https://raw.githubusercontent.com/malimujo/HRT-Radioteka/main/radioteka.png';
+
   const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="${imageUrl}" group-title="Slušaonica",${emisijaInfo}
+#EXTINF:-1 tvg-logo="${tvgLogoUrl}" group-title="Slušaonica",${emisijaInfo}
 ${result.mp3}`;
 
   fs.writeFileSync('Radioteka.m3u', m3uContent);
