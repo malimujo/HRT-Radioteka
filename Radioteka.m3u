@@ -1,3 +1,3 @@
 #EXTM3U
-#EXTINF:-1 tvg-logo="https://api.hrt.hr/media/f1/18/img-3607-20240423102240.webp" group-title="Slušaonica",Radioteka 18.03.2026. 19.03. 12:05
+#EXTINF:-1 tvg-logo="https://raw.githubusercontent.com/malimujo/HRT-Radioteka/main/radioteka.png" group-title="Slušaonica",Radioteka 18.03.2026. 19.03. 12:05
 https://api.hrt.hr/media/84/42/20260318-radioteka-37369542-20260319120551.mp3
